@@ -38,6 +38,15 @@ struct OrtMemoryInfo {
     return strcmp(name, other.name) < 0;
   }
 
+  size_t hash() const {
+    auto h = std::hash<const char*>()(name);
+    h ^= std::hash<int>()(id);
+    h ^= std::hash<int>()(mem_type);
+    h ^= std::hash<int>()(alloc_type);
+    h ^= std::hash<int>()(device.Id());
+    return h;
+  }
+
   std::string ToString() const {
     std::ostringstream ostr;
     ostr << "OrtMemoryInfo:["
@@ -61,3 +70,12 @@ inline bool operator==(const OrtMemoryInfo& left, const OrtMemoryInfo& other) {
 inline bool operator!=(const OrtMemoryInfo& lhs, const OrtMemoryInfo& rhs) { return !(lhs == rhs); }
 
 std::ostream& operator<<(std::ostream& out, const OrtMemoryInfo& info);
+
+namespace std {
+template<>
+struct hash<OrtMemoryInfo> {
+  size_t operator()(const OrtMemoryInfo& i) const {
+    return i.hash();
+  }
+};
+}

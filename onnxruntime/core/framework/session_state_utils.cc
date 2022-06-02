@@ -279,7 +279,7 @@ static bool IsArgNameInInputsOutputs(const std::string& name,
 
 common::Status SaveInputOutputNamesToNodeMapping(const onnxruntime::GraphViewer& graph,
                                                  SessionState& session_state,
-                                                 const std::vector<const NodeArg*>& implicit_inputs) {
+                                                 gsl::span<const NodeArg* const> implicit_inputs) {
   auto& graph_inputs = graph.GetInputsIncludingInitializers();
   auto& graph_outputs = graph.GetOutputs();
 
