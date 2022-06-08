@@ -38,12 +38,16 @@ struct OrtMemoryInfo {
     return strcmp(name, other.name) < 0;
   }
 
+  void hash_combine(size_t h, size_t& seed) const {
+    seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  }
+
   size_t hash() const {
     auto h = std::hash<const char*>()(name);
-    h ^= std::hash<int>()(id);
-    h ^= std::hash<int>()(mem_type);
-    h ^= std::hash<int>()(alloc_type);
-    h ^= std::hash<int>()(device.Id());
+    hash_combine(std::hash<int>()(id), h);
+    hash_combine(std::hash<int>()(mem_type), h);
+    hash_combine(std::hash<int>()(alloc_type), h);
+    hash_combine(std::hash<int>()(device.Id()), h);
     return h;
   }
 

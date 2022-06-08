@@ -80,7 +80,7 @@ class MemoryInfo;
 // subgraph SessionState. entry for node containing subgraph, with value containing attribute:SessionState pair
 // as a node may contain multiple subgraphs (e.g. 'If' has one for both the 'then' and 'else' branches).
 using SubgraphSessionStateMap =
-    InlinedHashMap<onnxruntime::NodeIndex, InlinedHashMap<std::string, std::unique_ptr<SessionState>>>;
+    std::unordered_map<onnxruntime::NodeIndex, std::unordered_map<std::string, std::unique_ptr<SessionState>>>;
 
 class SessionState {
  public:
@@ -293,7 +293,7 @@ class SessionState {
 
   const DataTransferManager& GetDataTransferMgr() const noexcept { return data_transfer_mgr_; }
 
-  std::vector<BufferUniquePtr>& GetMutableWeightsBuffers() noexcept { return weights_buffers_; }
+  InlinedVector<BufferUniquePtr>& GetMutableWeightsBuffers() noexcept { return weights_buffers_; }
 
   const NodeIndexInfo& GetNodeIndexInfo() const;
 
@@ -472,7 +472,7 @@ class SessionState {
   // This data structure is for uninitializing string tensors and
   // munmap memory region and close file descriptor
   InlinedHashMap<int, OrtCallback> deleter_for_initialized_tensors_;
-  std::vector<BufferUniquePtr> weights_buffers_;
+  InlinedVector<BufferUniquePtr> weights_buffers_;
   std::optional<SequentialExecutionPlan> p_seq_exec_plan_;
 
   const logging::Logger& logger_;
@@ -510,7 +510,6 @@ class SessionState {
   bool use_deterministic_compute_;
   bool enable_mem_reuse_;
   std::optional<NodeIndexInfo> node_index_info_;
-  std::multimap<int, std::unique_ptr<FeedsFetchesManager>> cached_feeds_fetches_managers_;
 
   // Container to store pre-packed weights to share between sessions.
   // The life-cycle of the cache itself is maintained by the user and the user will ensure
