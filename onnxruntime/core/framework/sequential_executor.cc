@@ -14,6 +14,7 @@
 #include "core/framework/session_state.h"
 #include "core/framework/op_kernel_context_internal.h"
 #include "core/framework/utils.h"
+#include <time.h>
 
 #if defined DEBUG_NODE_INPUTS_OUTPUTS
 #include "core/framework/debug_node_inputs_outputs_utils.h"
@@ -150,6 +151,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
   TimePoint tp;
   TimePoint sync_time_begin;
   TimePoint kernel_begin_time;
+  struct timespec kernel_begin_time_monotonic_raw;
   size_t input_activation_sizes = 0;
   size_t input_parameter_sizes = 0;
   size_t total_output_sizes = 0;
@@ -318,6 +320,8 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
       VLOGS(logger, 1) << "Computing kernel: " << node_name_for_profiling;
 
       kernel_begin_time = session_state.Profiler().Start();
+      // save monotonic raw kernel start time
+      clock_gettime(CLOCK_MONOTONIC_RAW, &kernel_begin_time_monotonic_raw);
 
       // Calculate total input sizes for this operation.
       CalculateTotalInputSizes(&op_kernel_context, p_op_kernel,
@@ -386,6 +390,10 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                 << "\n";
 #endif
 
+      char kernel_begin_time_monotonic_raw_buffer [50];
+      sprintf(kernel_begin_time_monotonic_raw_buffer, "%lu.%06ld",
+        kernel_begin_time_monotonic_raw.tv_sec, kernel_begin_time_monotonic_raw.tv_nsec / 1000);
+
       session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                      node_name_for_profiling + "_kernel_time",
                                                      kernel_begin_time,
@@ -401,6 +409,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                                                          {"input_type_shape", input_type_shape},
                                                          {"output_type_shape", output_type_shape},
                                                          {"thread_scheduling_stats", concurrency::ThreadPool::StopProfiling(session_state.GetThreadPool())},
+                                                         {"CLOCK_MONOTONIC_RAW", std::string(kernel_begin_time_monotonic_raw_buffer)},
                                                      });
       sync_time_begin = session_state.Profiler().Start();
     }

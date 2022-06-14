@@ -25,7 +25,7 @@ profiling::Profiler::~Profiler() {}
   auto ts = TimeDiffMicroSeconds(profiling_start_time_, start_time);
   for (const auto& ep_profiler : ep_profilers_) {
     ep_profiler->Start(ts);
-  } 
+  }
   return start_time;
 }
 
