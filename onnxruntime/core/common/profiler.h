@@ -8,6 +8,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <tuple>
+#include <list>
 
 #include "core/common/profiler_common.h"
 #include "core/common/logging/logging.h"
@@ -79,6 +80,13 @@ class Profiler {
                              const std::initializer_list<std::pair<std::string, std::string>>& event_args = {},
                              bool sync_gpu = false);
 
+   void EndTimeAndRecordEvent(EventCategory category,
+                             const std::string& event_name,
+                             const TimePoint& start_time,
+                             const std::initializer_list<std::pair<std::string, std::string>>& event_args,
+                             std::list<std::pair<std::string, std::string>> addtl_event_args,
+                             bool sync_gpu = false);
+
   /*
   Write profile data to the given stream in chrome format defined below.
   https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview#
@@ -108,7 +116,7 @@ class Profiler {
   static void SetGlobalMaxNumEvents(size_t new_max_num_events) {
     global_max_num_events_.store(new_max_num_events);
   }
-  
+
   void AddEpProfilers(std::unique_ptr<EpProfiler> ep_profiler) {
     if (ep_profiler) {
       ep_profilers_.push_back(std::move(ep_profiler));

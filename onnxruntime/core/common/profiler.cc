@@ -25,7 +25,7 @@ profiling::Profiler::~Profiler() {}
   auto ts = TimeDiffMicroSeconds(profiling_start_time_, start_time);
   for (const auto& ep_profiler : ep_profilers_) {
     ep_profiler->Start(ts);
-  } 
+  }
   return start_time;
 }
 
@@ -81,6 +81,43 @@ void Profiler::EndTimeAndRecordEvent(EventCategory category,
 
   EventRecord event(category, logging::GetProcessId(),
                     logging::GetThreadId(), event_name, ts, dur, {event_args.begin(), event_args.end()});
+  if (profile_with_logger_) {
+    custom_logger_->SendProfileEvent(event);
+  } else {
+    //TODO: sync_gpu if needed.
+    std::lock_guard<OrtMutex> lock(mutex_);
+    if (events_.size() < max_num_events_) {
+      events_.emplace_back(event);
+    } else {
+      if (session_logger_ && !max_events_reached) {
+        LOGS(*session_logger_, ERROR)
+            << "Maximum number of events reached, could not record profile event.";
+        max_events_reached = true;
+      }
+    }
+  }
+
+  for (const auto& ep_profiler : ep_profilers_) {
+    ep_profiler->Stop(ts);
+  }
+}
+
+void Profiler::EndTimeAndRecordEvent(EventCategory category,
+                                     const std::string& event_name,
+                                     const TimePoint& start_time,
+                                     const std::initializer_list<std::pair<std::string, std::string>>& event_args,
+                                     std::list<std::pair<std::string, std::string>> addtl_event_args,
+                                     bool /*sync_gpu*/) {
+  long long dur = TimeDiffMicroSeconds(start_time);
+  long long ts = TimeDiffMicroSeconds(profiling_start_time_, start_time);
+
+  // merge lists
+  std::list<std::pair<std::string, std::string>> event_args_list = event_args;
+
+  event_args_list.merge(addtl_event_args);
+
+  EventRecord event(category, logging::GetProcessId(),
+                    logging::GetThreadId(), event_name, ts, dur, {event_args_list.begin(), event_args_list.end()});
   if (profile_with_logger_) {
     custom_logger_->SendProfileEvent(event);
   } else {

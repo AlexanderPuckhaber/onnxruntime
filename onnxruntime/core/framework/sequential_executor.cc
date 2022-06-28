@@ -25,6 +25,8 @@
 #include "core/providers/cuda/nvtx_profile_context.h"
 #endif
 
+#include "core/common/perf_profiler.h"
+
 // #define TRACE_EXECUTION
 
 // Define this symbol to create Concurrency Visualizer markers.
@@ -155,9 +157,11 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
   size_t total_output_sizes = 0;
   std::string input_type_shape{};
   std::string output_type_shape{};
+  onnxruntime::profiling::PerfProfiler myperf;
 
   if (is_profiler_enabled) {
     tp = session_state.Profiler().Start();
+    myperf.Initialize();
   }
 
   ExecutionFrame frame{feed_mlvalue_idxs, feeds, fetch_mlvalue_idxs, fetches, fetch_allocators, session_state};
@@ -318,6 +322,8 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
       VLOGS(logger, 1) << "Computing kernel: " << node_name_for_profiling;
 
       kernel_begin_time = session_state.Profiler().Start();
+      myperf.Reset();
+      myperf.Enable();
 
       // Calculate total input sizes for this operation.
       CalculateTotalInputSizes(&op_kernel_context, p_op_kernel,
@@ -386,6 +392,20 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                 << "\n";
 #endif
 
+      myperf.Disable();
+      std::map<std::string, int> perf_results = myperf.Read();
+
+      // Log additional operation args / info.
+      std::list<std::pair<std::string, std::string>> args;
+
+      for (const auto& kv : perf_results) {
+        std::pair<std::string, std::string> new_pair;
+        new_pair.first = kv.first;
+        new_pair.second = std::to_string(kv.second);
+        args.emplace_back(new_pair);
+      }
+
+
       session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                      node_name_for_profiling + "_kernel_time",
                                                      kernel_begin_time,
@@ -401,7 +421,9 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                                                          {"input_type_shape", input_type_shape},
                                                          {"output_type_shape", output_type_shape},
                                                          {"thread_scheduling_stats", concurrency::ThreadPool::StopProfiling(session_state.GetThreadPool())},
-                                                     });
+                                                     },
+                                                     (std::list<std::pair<std::string, std::string>>)args,
+                                                     false);
       sync_time_begin = session_state.Profiler().Start();
     }
 
