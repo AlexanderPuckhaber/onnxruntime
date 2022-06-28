@@ -88,13 +88,13 @@ void PerfProfiler::Disable() {
   ioctl(perf_counter_info[0].perf_syscall_data.fd, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
 }
 
-std::map<std::string, int> PerfProfiler::Read() {
+std::map<std::string, uint64_t> PerfProfiler::Read() {
 
   int return_val = read(perf_counter_info[0].perf_syscall_data.fd, buf, sizeof(buf));
   if (return_val == -1) {
       char buffer[ 256 ];
       char * errorMsg = strerror_r( errno, buffer, 256 ); // GNU-specific version, Linux default
-      std::map<std::string, int> result;
+      std::map<std::string, uint64_t> result;
       std::string errorMsg_str = std::string(errorMsg);
       result[errorMsg_str] = -1;
       return result;
@@ -107,7 +107,7 @@ std::map<std::string, int> PerfProfiler::Read() {
     id_to_pci[perf_counter_info[i].perf_syscall_data.id] = i;
   }
 
-  std::map<std::string, int> result;
+  std::map<std::string, uint64_t> result;
 
   for (uint i = 0; i < rf->nr; i++) {
     // printf("id: %d, val: %d\n", rf->values[i].id, rf->values[i].value);

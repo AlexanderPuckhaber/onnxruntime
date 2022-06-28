@@ -61,7 +61,7 @@ class PerfProfiler {
 
     void Disable();
 
-    std::map<std::string, int> Read();
+    std::map<std::string, uint64_t> Read();
 
 };
 

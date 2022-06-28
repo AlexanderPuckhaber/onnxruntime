@@ -393,7 +393,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
 #endif
 
       myperf.Disable();
-      std::map<std::string, int> perf_results = myperf.Read();
+      std::map<std::string, uint64_t> perf_results = myperf.Read();
 
       // Log additional operation args / info.
       std::list<std::pair<std::string, std::string>> args;
