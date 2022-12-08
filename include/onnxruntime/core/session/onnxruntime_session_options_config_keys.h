@@ -119,3 +119,7 @@ static const char* const kOrtSessionOptionsConfigDynamicBlockBase = "session.dyn
 // "0": in some cases warnings will be logged but processing will continue. The default.
 // May be useful to expose bugs in models.
 static const char* const kOrtSessionOptionsConfigStrictShapeTypeInference = "session.strict_shape_type_inference";
+
+// Key for disable PrePacking,
+// If the config value is set to "1" then the prepacking is disabled, otherwise prepacking is enabled (default value)
+static const char* const kOrtSessionOptionsConfigProfilerPerfConfigFileName = "session.profiler.perf_config_file_name";

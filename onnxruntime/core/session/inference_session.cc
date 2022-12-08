@@ -58,6 +58,8 @@
 #include "core/util/protobuf_parsing_utils.h"
 #include "core/util/thread_utils.h"
 
+// #include "core/session/inference_session_utils.h"
+
 // custom ops are not available in a minimal build unless ORT_MINIMAL_BUILD_CUSTOM_OPS is set
 #if !defined(ORT_MINIMAL_BUILD) || defined(ORT_MINIMAL_BUILD_CUSTOM_OPS)
 #include "core/framework/customregistry.h"
@@ -348,6 +350,32 @@ void InferenceSession::ConstructorCommon(const SessionOptions& session_options,
 
   session_profiler_.Initialize(session_logger_);
   if (session_options_.enable_profiling) {
+
+    // printf("session_options.config_options len: %lu\n", session_options.config_options.configurations.size());
+
+    std::string perf_config_filename = "";
+
+    bool found_perf_config = session_options.config_options.TryGetConfigEntry(kOrtSessionOptionsConfigProfilerPerfConfigFileName, perf_config_filename);
+
+    // check for perf profiler config setting
+    if (found_perf_config) {
+      // printf("FOUND PERF CONFIG FILENAME IN CONFIG_OPTIONS: %s\n", perf_config_filename.c_str());
+
+      // load perf counter event map from json
+      std::ifstream f(perf_config_filename);
+      json data = json::parse(f);
+      std::map<std::string, std::string> event_map = data.get<std::map<std::string, std::string>>();
+
+      std::map<perf_type_config_t, std::string> counter_name_map;
+
+      // printf("event map size: %lu\n", event_map.size());
+
+      PerfProfiler new_perf = PerfProfiler(&counter_name_map, &event_map, NULL);
+
+      // store perf profiler configuration in Profiler
+      session_profiler_.SetPerf(new_perf);
+    }
+
     StartProfiling(session_options_.profile_file_prefix);
   }
 

@@ -71,6 +71,24 @@ template void Profiler::StartProfiling<char>(const std::basic_string<char>& file
 template void Profiler::StartProfiling<wchar_t>(const std::basic_string<wchar_t>& file_name);
 #endif
 
+// void Profiler::SetPerfProfile(std::map<std::string, std::string>* event_map) {
+//   std::map<perf_type_config_t, std::string> counter_name_map;
+//   myperf_ = PerfProfiler(&counter_name_map, event_map, NULL);
+// }
+
+void Profiler::SetPerf(PerfProfiler new_perf) {
+  myperf_ = new_perf;
+  is_perf_enabled = 1;
+}
+
+PerfProfiler* Profiler::GetPerfProfiler() {
+  return &myperf_;
+}
+
+bool Profiler::IsPerfEnabled() {
+  return is_perf_enabled;
+}
+
 void Profiler::EndTimeAndRecordEvent(EventCategory category,
                                      const std::string& event_name,
                                      const TimePoint& start_time,

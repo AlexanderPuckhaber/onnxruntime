@@ -25,7 +25,9 @@
 #include "core/providers/cuda/nvtx_profile_context.h"
 #endif
 
-#include "core/common/perf_profiler.h"
+#ifndef PERF_PROFILER_H
+// #include "core/common/perf_profiler.h"
+#endif
 
 // #define TRACE_EXECUTION
 
@@ -157,11 +159,16 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
   size_t total_output_sizes = 0;
   std::string input_type_shape{};
   std::string output_type_shape{};
-  onnxruntime::profiling::PerfProfiler myperf;
+  bool is_perf_profiler_enabled = session_state.Profiler().IsPerfEnabled();
+  PerfProfiler* myperf = session_state.Profiler().GetPerfProfiler();
+
+  // printf("DEBUG: IN SEQ EXECUTOR. profiler en: %d, perf en: %d\n", is_profiler_enabled, is_perf_profiler_enabled);
 
   if (is_profiler_enabled) {
     tp = session_state.Profiler().Start();
-    myperf.Initialize();
+
+    if (is_perf_profiler_enabled)
+      myperf->Initialize();
   }
 
   ExecutionFrame frame{feed_mlvalue_idxs, feeds, fetch_mlvalue_idxs, fetches, fetch_allocators, session_state};
@@ -322,8 +329,12 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
       VLOGS(logger, 1) << "Computing kernel: " << node_name_for_profiling;
 
       kernel_begin_time = session_state.Profiler().Start();
-      myperf.Reset();
-      myperf.Enable();
+
+      if (is_perf_profiler_enabled) {
+        myperf->Reset();
+        myperf->Enable();
+      }
+
 
       // Calculate total input sizes for this operation.
       CalculateTotalInputSizes(&op_kernel_context, p_op_kernel,
@@ -392,8 +403,12 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                 << "\n";
 #endif
 
-      myperf.Disable();
-      std::map<std::string, uint64_t> perf_results = myperf.Read();
+      std::map<std::string, uint64_t> perf_results;
+      if (is_perf_profiler_enabled) {
+        myperf->Disable();
+        perf_results = myperf->Read();
+      }
+
 
       // Log additional operation args / info.
       std::list<std::pair<std::string, std::string>> args;

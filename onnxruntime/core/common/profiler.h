@@ -14,6 +14,10 @@
 #include "core/common/logging/logging.h"
 #include "core/platform/ort_mutex.h"
 
+// #ifndef PERF_PROFILER_H
+#include "perf_profiler.h"
+// #endif
+
 namespace onnxruntime {
 
 namespace profiling {
@@ -49,6 +53,10 @@ class Profiler {
   */
   template <typename T>
   void StartProfiling(const std::basic_string<T>& file_name);
+
+  // void SetPerfProfile(std::map<std::string, std::string>* counter_name_map);
+
+  void SetPerf(PerfProfiler new_perf);
 
   /*
   Start profiling and return current time point.
@@ -126,6 +134,10 @@ class Profiler {
     }
   }
 
+  bool IsPerfEnabled();
+
+  PerfProfiler* GetPerfProfiler();
+
  private:
   ORT_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Profiler);
 
@@ -157,6 +169,17 @@ class Profiler {
   bool max_events_reached{false};
   bool profile_with_logger_{false};
   const size_t max_num_events_{global_max_num_events_.load()};
+
+  bool is_perf_enabled{false};
+
+  std::map<perf_type_config_t, std::string> counter_name_map;
+  std::map<std::string, std::string> event_list= {
+    {"perf::PERF_COUNT_HW_CPU_CYCLES", "cycles"},
+    {"perf::PERF_COUNT_HW_CACHE_DTLB:READ:ACCESS", "L1-dcache-loads"},
+    {"perf::PERF_COUNT_HW_CACHE_DTLB:READ:MISS", "dTLB-load-misses"}
+  };
+
+  PerfProfiler myperf_ = PerfProfiler(&counter_name_map, &event_list, NULL);
 
 #ifdef ENABLE_STATIC_PROFILER_INSTANCE
   static Profiler* instance_;
