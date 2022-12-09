@@ -6,7 +6,7 @@ Forked from [https://github.com/microsoft/onnxruntime](https://github.com/micros
 
 [ONNX Runtime](https://onnxruntime.ai/) is a framework for running ML programs. It can run any  ML program in the popular ONNX format.
 
-[`perf`](https://perf.wiki.kernel.org/index.php/Main_Page) is a utility on Linux to measure software and hardware event counters. It is especially useful for measuring CPU events.
+[perf](https://perf.wiki.kernel.org/index.php/Main_Page) is a utility on Linux to measure software and hardware event counters. It is especially useful for measuring CPU events.
 
 ### Important files:
 - `onnxruntime/core/common/perf_profiler.h` and `onnxruntime/core/common/perf_profiler.cc` work with the
@@ -33,7 +33,7 @@ With the path to the `.whl` file from your build:
 
 `pip3 install ../onnxruntime/build/Linux/RelWithDebInfo/dist/onnxruntime-1.12.0-cp310-cp310-linux_x86_64.whl`
 
-Adding `--force` will force reinstall, which is good for testing if you have the official or previous version of onnxruntime installed.
+Adding `--force` will force reinstall, which is good for testing if you have the official or previous version of onnxruntime installed. If you are in a python virtual environment, make sure to re-load it to get the new package.
 
 #### Usage
 ```python
@@ -96,5 +96,5 @@ The value is anything you want to name your event. Here, I am using the correspo
   \*In hindsight, this is the approach I should have used for this program: adding specific events to ONNX Runtime that the regular perf user program could simply listen for. Which is what I think ONNX Runtime does with NVTX integration...
 
 ### Caveats
-- This system 
+- `perf_event_open` is called here on a the current process pid. I call it in onnxruntime's Sequential Executor. If it spawns new processes, `perf` *should* track those (and even kernel processes if `perf_event_paranoid` is permissive enough). However, I don't think it can keeps track of the counters from existing processes e.g. services. I haven't checked to see if onnxruntime uses those.
 
