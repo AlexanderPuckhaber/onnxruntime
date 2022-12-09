@@ -11,7 +11,16 @@ Forked from [https://github.com/microsoft/onnxruntime](https://github.com/micros
 ### Important files:
 - `onnxruntime/core/common/perf_profiler.h` and `onnxruntime/core/common/perf_profiler.cc` work with the
 [`perf_event_open`](https://man7.org/linux/man-pages/man2/perf_event_open.2.html) API.
-
+- `onnxruntime/core/session/inference_session.cc`
+  - Loads perf config json from filename in `config_options`
+  - Initializes perf config object and saves it in Profiler
+- `onnxruntime/core/common/profiler.h` and `onnxruntime/core/common/profiler.cc`
+  - Store perf configuration object here.
+  - Modified `EndTimeAndRecordEvent` to take in a list of `str, str`
+- `onnxruntime/core/framework/sequential_executor.cc`
+  - This is where onnxruntime records profiler info per-layer
+  - perf profiler is therefore called here
+ pairs to append to the json.
 
 
 ### To build from source:
@@ -19,6 +28,7 @@ Forked from [https://github.com/microsoft/onnxruntime](https://github.com/micros
 - You need `perf` installed on the Linux kernel
 - You also need to install [`libpfm4`](https://github.com/wcohen/libpfm4).
   - You may need to modify CMakeLists.txt in this repository to point to  your install location for `libpfm4`, which is also called `pfm` or `perfmon`. Otherwise, you will get linker errors when you compile.
+    - I made changes [here](https://github.com/AlexanderPuckhaber/onnxruntime/blob/426c270079fb854d69a01e418a0c86adbb1a4b4d/cmake/CMakeLists.txt#L1673) (necessary), and [here](https://github.com/AlexanderPuckhaber/onnxruntime/blob/426c270079fb854d69a01e418a0c86adbb1a4b4d/cmake/CMakeLists.txt#L1006) (unsure if necessary)
 
 #### Build command:
 
